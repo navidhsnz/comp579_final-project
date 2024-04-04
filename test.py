@@ -26,4 +26,6 @@ if __name__ == "__main__":
         }
     
     agent = Agent(**parameters)
-    agent.train()
+    steps = agent.train()
+
+    

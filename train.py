@@ -67,6 +67,7 @@ class Agent:
 
             print(episode, ep_len)
             list_ep_lens.append(ep_len)
+        return(list_ep_lens)
 
     def update(self, batch, weights=None):
         state, action, reward, next_state, done = batch

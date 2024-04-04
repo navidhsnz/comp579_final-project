@@ -6,9 +6,17 @@
 # provides a efficient way of calculating the cumulative sum of priorities, allowing O(log N) updates
 # and sampling. (Appendix B.2.1, Proportional prioritization)
 
-# Additional useful links
-# Good tutorial about SumTree data structure:  https://adventuresinmachinelearning.com/sumtree-introduction-python/
-# How to represent full binary tree as array: https://stackoverflow.com/questions/8256222/binary-tree-represented-using-array
+class Alternative_ds:
+    def __init__(self, size):
+        self.data = [None] * size
+
+        self.size = size
+        self.count = 0
+        self.real_size = 0
+
+    def total(self):
+        return sum(self.data)
+    
 class SumTree:
     def __init__(self, size):
         self.nodes = [0] * (2 * size - 1)
@@ -17,6 +25,17 @@ class SumTree:
         self.size = size
         self.count = 0
         self.real_size = 0
+
+    def update(self, data_idx, value):
+        self.data[data_idx] = value
+
+    def add(self, value, data):
+        self.data[self.count] = data
+        self.update(self.count, value)
+
+        self.count = (self.count + 1) % self.size
+        self.real_size = min(self.size, self.real_size + 1)
+
 
     @property
     def total(self):
