@@ -65,7 +65,7 @@ class Agent:
                         _, td_error = self.update(batch, weights=weights)
                         self.buffer.update_priorities(tree_idxs, td_error.cpu().numpy())
 
-            print(episode, ep_len)
+            #print(episode, ep_len)
             list_ep_lens.append(ep_len)
         return(list_ep_lens)
 
