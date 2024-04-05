@@ -23,8 +23,9 @@ class Agent:
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.n
 
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("cpu")
+        print("gpu:\n")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device("cpu")
 
         self.policy_net = DQN(self.state_dim, self.action_dim).to(self.device)
         self.target_net = DQN(self.state_dim, self.action_dim).to(self.device)
