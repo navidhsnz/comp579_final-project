@@ -9,6 +9,7 @@ class DQN(nn.Module):
         self.layer3 = nn.Linear(64, n_actions)
 
     def forward(self, x):
+        # print("typee: ",x.dtype)
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
         return self.layer3(x)

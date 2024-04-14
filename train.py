@@ -21,7 +21,10 @@ class Agent:
         self.eps_max = kwargs.get("epsilon_max")
         self.eps_min = kwargs.get("epsilon_min")
         self.buffer = kwargs.get("buffer")
+        self.max_episode_len = kwargs.get("max_episode_len")
         self.env = kwargs.get("env")
+        self.non_stationarity = kwargs.get("non_stationarity")
+        self.env_changes = kwargs.get("env_changes")
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.n
 
@@ -48,33 +51,46 @@ class Agent:
     def train(self):
         step = 0
         list_ep_lens = []
-        for episode in range(self.ep_num):
+        list_loss_vals = []
+        for episode in tqdm(range(self.ep_num)):
             state = self.env.reset()[0]
             ep_len = 0
             done = False
+            if self.non_stationarity:
+                    self.env_changes(self.env, episode)
+
             while not done:
+                if ep_len>self.max_episode_len:
+                    break
                 ep_len += 1
-                step += 1
                 action = self.select_action(state, episode)
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
                 done = terminated or truncated
                 self.buffer.add((state, action, reward, next_state, int(done)))
                 state = next_state
 
-                
-                if step > self.batch_size:
-                    self.sample_and_update()
-                        
+                loss_val = 0
 
-            print(episode, ep_len)
+                if step > self.batch_size:
+                    loss_val = self.sample_and_update()
+                else:
+                    step+=1
+
+
+            # print(episode, ep_len)
+            # print(loss_val)
             list_ep_lens.append(ep_len)
-        return (list_ep_lens)
+            list_loss_vals.append(loss_val)
+            # if episode>50:
+            #     self.env.render_mode = "human"
+        return list_ep_lens, list_loss_vals
 
     def sample_and_update(self):
         batch, sample_weights, indices = self.buffer.sample(self.batch_size)
         loss_val , td_error = self.update(batch, sample_weights)
         self.buffer.update_priorities(indices, td_error.cpu().numpy()) # this function is defined to do nothing in random buffer implementaiton.
-
+        return loss_val
+    
     def update(self, batch, weights):
         state, action, reward, next_state, done = batch
         Q_next = self.target_net(next_state.to(self.device)).max(1).values
