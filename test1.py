@@ -21,8 +21,11 @@ if __name__ == "__main__":
         "batch_size": 64,
         "epsilon_max": 0.1,
         "epsilon_min": 0.02,
+        "max_episode_len": -1,
         "device": device,
-        "env": gym.make("CartPole-v1"),
+        "call_env_changes": False,
+        "env_changes": lambda *_: None,
+        "env": gym.make("CartPole-v1", render_mode='human'),
         "buffer": RandomReplayMemory(buffer_size= 50_000, device = device),
         # "buffer": PrioritizedReplayMemory(buffer_size= 50_000, device = device, alpha=0.7, beta=0.2)
         }
