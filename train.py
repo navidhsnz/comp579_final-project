@@ -36,7 +36,7 @@ class Agent:
         self.buffer = kwargs.get("buffer")
         self.max_episode_len = kwargs.get("max_episode_len")
         self.env = kwargs.get("env")
-        self.call_env_changes = kwargs.get("call_env_changes")
+        self.non_stationarity = kwargs.get("non_stationarity")
         self.env_changes = kwargs.get("env_changes")
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.n
@@ -67,17 +67,19 @@ class Agent:
         step = 0
         list_ep_lens = []
         list_loss_vals = []
+        list_accumulated_reward = []
         # this loop will perform the episodes
-        for episode in tqdm(range(self.ep_num)):
+        for episode in range(self.ep_num):
             state = self.env.reset()[0]
             ep_len = 0
             done = False
-            if self.call_env_changes:
+            if self.non_stationarity:
                     self.env_changes(self.env, episode) # this fuction changes the environment based on a given episode number. The fuction is defined and given as one of the parameters of the agent. It is used for the case of non-stationary environments as well as for rendering a visualization of the environment when needed.
-
-            while not done: # this loops follows the steps with an episode untill termination
+            accumulated_reward = 0
+            reduced_gamma = 1
+            while not done: # this loops follows the steps within an episode untill termination
                 # Here is to end the episode forcefully if it goes above teh max_episode_len
-                if ep_len>self.max_episode_len:
+                if ep_len==self.max_episode_len:
                     break 
 
                 ep_len += 1
@@ -86,7 +88,8 @@ class Agent:
                 done = terminated or truncated
                 self.buffer.add((state, action, reward, next_state, int(done))) # add transition to buffer
                 state = next_state
-
+                accumulated_reward += (reward * reduced_gamma)
+                reduced_gamma*= self.gamma
                 loss_val = 0
 
                 if step > self.batch_size: # if the step is larger than batch_size, we start sampling and training. It is used to avoid staring the trainig before there is adequate data in the buffer.
@@ -94,9 +97,12 @@ class Agent:
                 else:
                     step+=1 # this variable is used to keep track of how many steps went by without peroforming a training. It is used to avoid staring the trainig before there is adequate data in the buffer.
 
+            print(f"episode:{episode}, ep_length:{ep_len}, acc_reward:{accumulated_reward}, loss:{loss_val}")
             list_ep_lens.append(ep_len)
             list_loss_vals.append(loss_val)
-        return list_ep_lens, list_loss_vals
+            list_accumulated_reward.append(accumulated_reward)
+
+        return list_ep_lens, list_loss_vals, list_accumulated_reward
 
     # This funciton samples transitions from the replay buffer and calls a helper function to update the neural network weigts.
     def sample_and_update(self):
