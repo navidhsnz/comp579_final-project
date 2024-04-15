@@ -1,4 +1,4 @@
-# This code part of our final project of comp 579 in Winter 2024.
+# This code is part of our final project of comp 579 in Winter 2024.
 # We used the standard pytorch recommendation for initializing the DQN class below.
 # This part of the code is based on the tutorial in following link: https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 
