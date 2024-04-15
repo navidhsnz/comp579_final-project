@@ -1,5 +1,7 @@
-#This code was initially taken from the gym official documents and adapted to the current project.
+# This code is part of our final project of comp 579 in Winter 2024.
+# It was originally taken from the gym official documents, however it was edited to fit our project's needs.
 # link: https://www.gymlibrary.dev/content/environment_creation/
+# it implements a custom grid world environment, and allows us to change the configuration of the environment as needed. It uses pygame library to render a visualization of the environment.
 
 import gym
 from gym import spaces
@@ -11,28 +13,25 @@ from gymnasium.envs.registration import register
 class GridWorldEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None, size=9):
+    def __init__(self, render_mode=None,  size=9, stochasticity_constant=0):
         self.size = size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
-
+        self.stochasticity_constant = stochasticity_constant
         self.wall_locations = [ np.array([5,i]) for i in (0,2,3,4,5,6,7,8,9)
         ]
         # print("walls",self.wall_locations)
         
         self.observation_space = np.array(
                 [(0,0,0,0),(self.size-1,self.size-1,self.size-1,self.size-1)]
-                # "agent": spaces.Box(0, size - 1, shape=(2,), dtype=int),
-                # "target": spaces.Box(0, size - 1, shape=(2,), dtype=int),
             ).T
 
         # We have 4 actions, corresponding to "right", "up", "left", "down", "right"
         self.action_space = spaces.Discrete(4)
 
-        """
-        The following dictionary maps abstract actions from `self.action_space` to 
-        the direction we will walk in if that action is taken.
-        I.e. 0 corresponds to "right", 1 to "up" etc.
-        """
+        # The following two dictionary maps abstract actions from `self.action_space` to 
+        # the direction we will walk in if that action is taken.
+        # I.e. 0 corresponds to "right", 1 to "up" etc.
+
         self._action_to_direction = {
             0: np.array([1, 0]),
             1: np.array([0, 1]),
@@ -40,6 +39,7 @@ class GridWorldEnv(gym.Env):
             3: np.array([0, -1]),
         }
 
+        # this dictionary is to link the action to steps that are not exactly what was inteded form the environment as a way of simulating stochasticity.
         self._action_to_direction_sideways = {
             0: [np.array([1, 1]), np.array([1, -1])],
             1: [np.array([1, 1]), np.array([-1, 1])],
@@ -78,21 +78,10 @@ class GridWorldEnv(gym.Env):
             )
         }
 
-    def reset(self, seed=None, options=None):
-        # We need the following line to seed self.np_random
-        super().reset(seed=seed)
-
-        # Choose the agent's location uniformly at random
+    def reset(self):
+        # the agent's starting locaiton and target's location are fixed
         self._agent_location = np.array([0,0])
-        # self.np_random.integers(0, self.size, size=2, dtype=int)
-        # print(self._agent_location, type(self._agent_location))
-        # We will sample the target's location randomly until it does not coincide with the agent's location
         self._target_location = np.array([9,0])
-        # self._agent_location
-        while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = self.np_random.integers(
-                0, self.size, size=2, dtype=int
-            )
 
         observation = self._get_obs()
         info = self._get_info()
@@ -105,10 +94,10 @@ class GridWorldEnv(gym.Env):
     def step(self, action):
         # Map the action (element of {0,1,2,3}) to the direction we walk in
         direction = self._action_to_direction[action]
+        # similarly, map the actions to the directions influenced by stochasticity
         direction_sideways = self._action_to_direction_sideways[action]
-        # We use `np.clip` to make sure we don't leave the grid
         
-        if random.random() < 0:
+        if random.random() < self.stochasticity_constant: # this will enable stochasticity in the environment.
             new_location = np.clip(
             self._agent_location + random.choice(direction_sideways), 0, self.size - 1
             )
@@ -117,12 +106,7 @@ class GridWorldEnv(gym.Env):
             self._agent_location + direction, 0, self.size - 1
             )
         
-        # new_location = np.clip(
-        #     self._agent_location + direction, 0, self.size - 1
-        # )
         walls = list(map(lambda x: tuple(x), self.wall_locations))
-        # print("tuple new location",tuple(new_location))
-        # print("wall locaitons",walls)
 
         if tuple(new_location) not in walls:
             self._agent_location = new_location
