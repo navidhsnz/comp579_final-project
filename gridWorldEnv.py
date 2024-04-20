@@ -7,6 +7,7 @@ import gym
 from gym import spaces
 import pygame
 import numpy as np
+import time
 import random
 from gymnasium.envs.registration import register
 
@@ -17,6 +18,7 @@ class GridWorldEnv(gym.Env):
         self.size = size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
         self.stochasticity_constant = stochasticity_constant
+        # print("stochsticity: ",self.stochasticity_constant)
         self.wall_locations = [ np.array([5,i]) for i in (0,2,3,4,5,6,7,8,9)
         ]
         # print("walls",self.wall_locations)
@@ -41,10 +43,10 @@ class GridWorldEnv(gym.Env):
 
         # this dictionary is to link the action to steps that are not exactly what was inteded form the environment as a way of simulating stochasticity.
         self._action_to_direction_sideways = {
-            0: [np.array([1, 1]), np.array([1, -1])],
-            1: [np.array([1, 1]), np.array([-1, 1])],
-            2: [np.array([-1, 1]), np.array([-1, -1])],
-            3: [np.array([1, -1]), np.array([-1, -1])],
+            0: [np.array([0, 1]), np.array([0, -1])],
+            1: [np.array([1, 0]), np.array([-1, 0])],
+            2: [np.array([0, 1]), np.array([0, -1])],
+            3: [np.array([1, 0]), np.array([-1, 0])],
         }
 
 
@@ -88,6 +90,7 @@ class GridWorldEnv(gym.Env):
 
         if self.render_mode == "human":
             self._render_frame()
+        
 
         return observation, info
 
@@ -96,31 +99,37 @@ class GridWorldEnv(gym.Env):
         direction = self._action_to_direction[action]
         # similarly, map the actions to the directions influenced by stochasticity
         direction_sideways = self._action_to_direction_sideways[action]
-        
-        if random.random() < self.stochasticity_constant: # this will enable stochasticity in the environment.
+        rand = random.random()
+        # print(f"comparing rand {rand} with stoch const {self.stochasticity_constant}")
+        if  rand < self.stochasticity_constant: # this will enable stochasticity in the environment.
+            mv = random.choice(direction_sideways)
+            # print(f"stoch move from {self._agent_location} with move {mv}")
+
             new_location = np.clip(
             self._agent_location + random.choice(direction_sideways), 0, self.size - 1
             )
         else:
+            # print(f"normal move from {self._agent_location} with move {direction}")
             new_location = np.clip(
             self._agent_location + direction, 0, self.size - 1
             )
         
         walls = list(map(lambda x: tuple(x), self.wall_locations))
-
+        reward = 0
         if tuple(new_location) not in walls:
             self._agent_location = new_location
         else:
             pass
+            # reward = -0.02
         # An episode is done iff the agent has reached the target
         terminated = np.array_equal(self._agent_location, self._target_location)
-        reward = 1 if terminated else 0  # Binary sparse rewards
+        if terminated:
+            reward = 1
         observation = self._get_obs()
         info = self._get_info()
 
         if self.render_mode == "human":
             self._render_frame()
-
         return observation, reward, terminated, False, info
 
     def render(self):

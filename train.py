@@ -17,14 +17,18 @@ import torch.nn as nn
 import torch.optim as optim
 from copy import deepcopy
 from DQN import DQN
+from gridWorldEnv import GridWorldEnv
 from memory import PrioritizedReplayMemory, RandomReplayMemory
 from tqdm import tqdm
+
 
 
 class Agent:
     # Initializes the reinforcement learning agent.
     def __init__(self, **kwargs):
-        # Initialize hyperparameters and environment-related variables
+        # Initialize hyperparameters and environment-related variables   
+        self.device_name = kwargs.get("device")
+        self.device = torch.device(self.device_name)
         self.gamma = kwargs.get("gamma")
         self.lr = kwargs.get("lr")
         self.tau = kwargs.get("TAU")
@@ -33,14 +37,32 @@ class Agent:
         self.batch_size = kwargs.get("batch_size")
         self.eps_max = kwargs.get("epsilon_max")
         self.eps_min = kwargs.get("epsilon_min")
-        self.buffer = kwargs.get("buffer")
         self.max_episode_len = kwargs.get("max_episode_len")
-        self.env = kwargs.get("env")
-        self.non_stationarity = kwargs.get("non_stationarity")
+
+        self.env_name = kwargs.get("env_name")
+        if self.env_name == "GridWorldEnv":
+            self.stochasticity = kwargs.get("stochasticity_constant")
+            self.env = GridWorldEnv(size=10,stochasticity_constant=self.stochasticity)
+        else:
+            self.env = gym.make(self.env_name)
+
+        self.buffer_size = kwargs.get("buffer_size")
+        self.buffer_type = kwargs.get("buffer_type")
+        self.buffer_alpha = kwargs.get("buffer_alpha")
+        self.buffer_beta = kwargs.get("buffer_beta")
+        if self.buffer_type == "random":
+            # print("random initilized")
+            self.buffer = RandomReplayMemory(buffer_size=self.buffer_size, device=self.device)
+        elif self.buffer_type == "prioritized":
+            # print("Prioritized initilized")
+            self.buffer = PrioritizedReplayMemory(buffer_size=self.buffer_size, device=self.device, alpha=self.buffer_alpha, beta=self.buffer_beta)
+        else:
+            print("error: type of buffer not properly declared")
+
+        self.run_env_changes = kwargs.get("run_env_changes")
         self.env_changes = kwargs.get("env_changes")
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.n
-        self.device = kwargs.get("device")
 
         # Initialize the policy and target networks
         self.policy_net = DQN(self.state_dim, self.action_dim).to(self.device)
@@ -73,7 +95,7 @@ class Agent:
             state = self.env.reset()[0]
             ep_len = 0
             done = False
-            if self.non_stationarity:
+            if self.run_env_changes:
                     self.env_changes(self.env, episode) # this fuction changes the environment based on a given episode number. The fuction is defined and given as one of the parameters of the agent. It is used for the case of non-stationary environments as well as for rendering a visualization of the environment when needed.
             accumulated_reward = 0
             reduced_gamma = 1
