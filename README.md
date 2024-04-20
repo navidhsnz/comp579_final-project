@@ -8,7 +8,7 @@ The components of the program are located in different files including:
 - gridWorldEnv.py: contains the customized gridworld environment for experiments 2 and 3.
 
 ## Experiments
-The tree experiments each have tehir own .ipynb file which involves everything regarding their parameters and their graph drawings. After running the experiments, these codes store the experiment results in numpy (.npy) files within a folder called "experiment_data" to have easy access to them later. These experiments all use parallel processing for increasing the speed. Note that in total, it took a lot of trainig time (more than 25 hours) for all the experiments combined.
+The 3 experiments each have tehir own .ipynb file which involves everything regarding their parameters and their graph drawings. After running the experiments, these codes store the experiment results in numpy (.npy) files within a folder called "experiment_data" to have easy access to them later. These experiments all use parallel processing for increasing the speed. Note that in total, it took a lot of trainig time (more than 25 hours) for all the experiments combined.
 
 ## How to (Re)run the Experiments
 simply run the codes withing experiment{1,2,3}.ipynb files : )
