@@ -1,5 +1,5 @@
 # comp579_final-project
-
+Please find the project report in the files above.
 ## Project Files
 The components of the program are located in different files including:
 - train.py: contains a class called Agent which involves all necessary initializations and the code responsible for training the agent and updating the neural netowork weights.
